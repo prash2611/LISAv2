@@ -32,7 +32,7 @@ Class HyperVProvider : TestProvider
 	[string] $BaseCheckpoint = "ICAbase"
 	[bool]   $ReuseVmOnFailure = $true
 
-	[object] DeployVMs([xml] $GlobalConfig, [object] $SetupTypeData, [object] $TestCaseData, [string] $TestLocation, [string] $RGIdentifier, [bool] $UseExistingRG, [string] $ResourceCleanup) {
+	[object] DeployVMs([xml] $GlobalConfig, [object] $SetupTypeData, [object] $TestCaseData, [string] $TestLocation, [string] $RGIdentifier, [bool] $UseExistingRG, [bool] $AddNetworkSecurityGroup, [string] $ResourceCleanup) {
 		$allVMData = @()
 		$DeploymentElapsedTime = $null
 		$ErrorMessage = ""

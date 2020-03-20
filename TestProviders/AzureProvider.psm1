@@ -34,7 +34,7 @@ Class AzureProvider : TestProvider
 	[string] $PlatformFaultDomainCount
 	[string] $PlatformUpdateDomainCount
 
-	[object] DeployVMs([xml] $GlobalConfig, [object] $SetupTypeData, [object] $TestCaseData, [string] $TestLocation, [string] $RGIdentifier, [bool] $UseExistingRG, [string] $ResourceCleanup) {
+	[object] DeployVMs([xml] $GlobalConfig, [object] $SetupTypeData, [object] $TestCaseData, [string] $TestLocation, [string] $RGIdentifier, [bool] $UseExistingRG, [bool] $AddNetworkSecurityGroup, [string] $ResourceCleanup) {
 		$allVMData = @()
 		$DeploymentElapsedTime = $null
 		$ErrorMessage = ""
@@ -50,7 +50,7 @@ Class AzureProvider : TestProvider
 			if (!$allVMData) {
 				$isAllDeployed = Create-AllResourceGroupDeployments -SetupTypeData $SetupTypeData -TestCaseData $TestCaseData -Distro $RGIdentifier `
 					-TestLocation $TestLocation -GlobalConfig $GlobalConfig -TipSessionId $this.TipSessionId -TipCluster $this.TipCluster `
-					-UseExistingRG $UseExistingRG -ResourceCleanup $ResourceCleanup -PlatformFaultDomainCount $this.PlatformFaultDomainCount `
+					-UseExistingRG $UseExistingRG -AddNetworkSecurityGroup $AddNetworkSecurityGroup -ResourceCleanup $ResourceCleanup -PlatformFaultDomainCount $this.PlatformFaultDomainCount `
 					-PlatformUpdateDomainCount $this.PlatformUpdateDomainCount
 
 				if ($isAllDeployed[0] -eq "True") {

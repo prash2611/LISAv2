@@ -1,0 +1,35 @@
+<!--# We define inbound and outbound security rules for Windows VM or Linux VM in this file.-->
+<platform>
+    <linux>
+        <rule>
+            <name>SecurityRule</name>
+            <properties>
+                <description>SecurityRule</description>
+                <protocol>tcp</protocol>
+                <sourcePortRange>*</sourcePortRange>
+                <destinationPortRange>22</destinationPortRange>
+                <sourceAddressPrefix>xx.xx.xx.xx/32</sourceAddressPrefix>
+                <destinationAddressPrefix>*</destinationAddressPrefix>
+                <access>Allow</access>
+                <priority>101</priority>
+                <direction>Inbound</direction>
+            </properties>
+        </rule>
+    </linux>
+    <windows>
+        <rule>
+            <name>SecurityRule</name>
+            <properties>
+                <description>SecurityRule</description>
+                <protocol>tcp</protocol>
+                <sourcePortRange>*</sourcePortRange>
+                <destinationPortRange>5985</destinationPortRange>
+                <sourceAddressPrefix>xx.xx.xx.xx/32</sourceAddressPrefix>
+                <destinationAddressPrefix>*</destinationAddressPrefix>
+                <access>Allow</access>
+                <priority>101</priority>
+                <direction>Inbound</direction>
+            </properties>
+        </rule>
+    </windows>
+</platform>

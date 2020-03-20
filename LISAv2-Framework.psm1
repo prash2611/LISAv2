@@ -68,7 +68,10 @@ function Start-LISAv2 {
 		[string] $ResultDBTable = "",
 		[string] $ResultDBTestTag = "",
 
-		[switch] $ExitWithZero
+		[switch] $ExitWithZero,
+
+		# [Optional] Add network security group to VM. XML/Other/network_security_rules.xml need to be prepared. 
+		[switch] $AddNetworkSecurityGroup
 	)
 
 	PROCESS {

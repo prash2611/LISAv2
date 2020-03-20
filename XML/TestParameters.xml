@@ -90,4 +90,7 @@
 
 	<!-- [Optional] Exit LISAv2 with zero exit code, irrespective of test failures. -->
 	<ExitWithZero></ExitWithZero>
+
+	<!-- [Optional] Add network security group to VM. XML/Other/network_security_rules.xml need to be prepared. -->
+	<AddNetworkSecurityGroup></AddNetworkSecurityGroup>
 </TestParameters>

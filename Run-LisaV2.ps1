@@ -110,7 +110,11 @@ Param(
 	[string] $ResultDBTable = "",
 	[string] $ResultDBTestTag = "",
 
-	[switch] $ExitWithZero
+	[switch] $ExitWithZero,
+
+	# [Optional] Add network security group to VM. XML/Other/network_security_rules.xml need to be prepared.
+	# This option only supports Azure platform.
+	[switch] $AddNetworkSecurityGroup
 )
 
 

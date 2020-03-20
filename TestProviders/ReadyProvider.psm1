@@ -28,7 +28,7 @@ using Module ".\TestProvider.psm1"
 
 Class ReadyProvider : TestProvider
 {
-	[object] DeployVMs([xml] $GlobalConfig, [object] $SetupTypeData, [object] $TestCaseData, [string] $TestLocation, [string] $RGIdentifier, [bool] $UseExistingRG, [string] $ResourceCleanup) {
+	[object] DeployVMs([xml] $GlobalConfig, [object] $SetupTypeData, [object] $TestCaseData, [string] $TestLocation, [string] $RGIdentifier, [bool] $UseExistingRG, [bool] $AddNetworkSecurityGroup, [string] $ResourceCleanup) {
 		function Create-QuickVMNode() {
 			$objNode = New-Object -TypeName PSObject
 			Add-Member -InputObject $objNode -MemberType NoteProperty -Name PublicIP -Value $null -Force

@@ -73,6 +73,7 @@ Class TestController
 	[bool] $EnableCodeCoverage
 	[Hashtable] $CustomParams
 	[string] $VMGeneration
+	[bool] $AddNetworkSecurityGroup
 
 	[string[]] ParseAndValidateParameters([Hashtable]$ParamTable) {
 		$this.TestLocation = $ParamTable["TestLocation"]
@@ -94,6 +95,7 @@ Class TestController
 		$this.UseExistingRG = $ParamTable["UseExistingRG"]
 		$this.EnableCodeCoverage = $ParamTable["EnableCodeCoverage"]
 		$this.VMGeneration = $ParamTable["VMGeneration"]
+		$this.AddNetworkSecurityGroup = $ParamTable["AddNetworkSecurityGroup"]
 		if (!$this.VMGeneration) {
 			$this.VMGeneration = "1"
 		}
@@ -633,7 +635,7 @@ Class TestController
 						# Deploy the VM for the setup
 						Write-LogInfo "Deploy target machine for test if required ..."
 						$deployVMStatus = $this.TestProvider.DeployVMs($this.GlobalConfig, $this.SetupTypeTable[$setupType], $this.SetupTypeToTestCases[$setupKey][0], `
-							$this.TestLocation, $this.RGIdentifier, $this.UseExistingRG, $this.ResourceCleanup)
+							$this.TestLocation, $this.RGIdentifier, $this.UseExistingRG, $this.AddNetworkSecurityGroup, $this.ResourceCleanup)
 						$vmData = $null
 						$deployErrors = ""
 						if ($deployVMStatus) {

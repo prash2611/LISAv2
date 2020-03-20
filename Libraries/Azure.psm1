@@ -266,7 +266,7 @@ Function Change-StorageAccountType($TestCaseData, [string]$Location, $GlobalConf
     return $changedSC
 }
 
-Function Create-AllResourceGroupDeployments($SetupTypeData, $TestCaseData, $Distro, [string]$TestLocation, $GlobalConfig, $TiPSessionId, $TipCluster, $UseExistingRG, $ResourceCleanup, $PlatformFaultDomainCount, $PlatformUpdateDomainCount) {
+Function Create-AllResourceGroupDeployments($SetupTypeData, $TestCaseData, $Distro, [string]$TestLocation, $GlobalConfig, $TiPSessionId, $TipCluster, $UseExistingRG, $AddNetworkSecurityGroup, $ResourceCleanup, $PlatformFaultDomainCount, $PlatformUpdateDomainCount) {
     $resourceGroupCount = 0
     $Error = ""
     Write-LogInfo "Current test setup: $($SetupTypeData.Name)"
@@ -344,7 +344,7 @@ Function Create-AllResourceGroupDeployments($SetupTypeData, $TestCaseData, $Dist
                         $null = Generate-AzureDeployJSONFile -RGName $groupName -ImageName $osImage -osVHD $osVHD -RGXMLData $RG -Location $location `
                                 -azuredeployJSONFilePath $azureDeployJSONFilePath -CurrentTestData $TestCaseData -TiPSessionId $TiPSessionId -TipCluster $TipCluster `
                                 -StorageAccountName $used_SC -PlatformFaultDomainCount $PlatformFaultDomainCount `
-                                -PlatformUpdateDomainCount $PlatformUpdateDomainCount
+                                -PlatformUpdateDomainCount $PlatformUpdateDomainCount -AddNetworkSecurityGroup $AddNetworkSecurityGroup
 
                         $DeploymentStartTime = (Get-Date)
                         $CreateRGDeployments = Create-ResourceGroupDeployment -RGName $groupName -TemplateFile $azureDeployJSONFilePath `
@@ -848,7 +848,7 @@ Function Get-NewVMName ($namePrefix, $numberOfVMs) {
 }
 
 Function Generate-AzureDeployJSONFile ($RGName, $ImageName, $osVHD, $RGXMLData, $Location, $azuredeployJSONFilePath,
-    $CurrentTestData, $StorageAccountName, $TiPSessionId, $TipCluster, $PlatformFaultDomainCount, $PlatformUpdateDomainCount) {
+    $CurrentTestData, $StorageAccountName, $TiPSessionId, $TipCluster, $PlatformFaultDomainCount, $PlatformUpdateDomainCount, $AddNetworkSecurityGroup) {
 
     #Random Data
     $RGrandomWord = ([System.IO.Path]::GetRandomFileName() -replace '[^a-z]')
@@ -1006,6 +1006,16 @@ Function Generate-AzureDeployJSONFile ($RGName, $ImageName, $osVHD, $RGXMLData, 
     $sshPath = '/home/' + $user + '/.ssh/authorized_keys'
     $sshKeyData = $global:sshPublicKey
     $createAvailabilitySet = !$UseExistingRG
+    $networkSecurityGroupName = "lisav2-nsg"
+
+    if ($AddNetworkSecurityGroup) {
+        $securityRulesXml = [xml](Get-Content -Path "$WorkingDirectory\XML\Other\network_security_rules.xml")
+        if ($OSType -eq "Windows") {
+            $securityRules = $securityRulesXml.platform.windows.rule
+        } else {
+            $securityRules = $securityRulesXml.platform.linux.rule
+        }
+    }
 
     if ($UseExistingRG) {
         $existentAvailabilitySet = Get-AzResource | Where-Object { (( $_.ResourceGroupName -eq $RGName ) -and ( $_.ResourceType -imatch "availabilitySets" ))} | `
@@ -1102,6 +1112,9 @@ Function Generate-AzureDeployJSONFile ($RGName, $ImageName, $osVHD, $RGXMLData, 
         Add-Content -Value "$($indents[2])^defaultSubnetID^: ^[concat(variables('vnetID'),'/subnets/', variables('defaultSubnet'))]^," -Path $jsonFile
         Add-Content -Value "$($indents[2])^vnetID^: ^[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]^," -Path $jsonFile
     }
+    if ($AddNetworkSecurityGroup) {
+        Add-Content -Value "$($indents[2])^networkSecurityGroupName^: ^$networkSecurityGroupName^," -Path $jsonFile
+    }
     Add-Content -Value "$($indents[2])^availabilitySetName^: ^$availabilitySetName^," -Path $jsonFile
     Add-Content -Value "$($indents[2])^lbName^: ^$LoadBalancerName^," -Path $jsonFile
     Add-Content -Value "$($indents[2])^lbID^: ^[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]^," -Path $jsonFile
@@ -1167,6 +1180,45 @@ Function Generate-AzureDeployJSONFile ($RGName, $ImageName, $osVHD, $RGXMLData, 
         Add-Content -Value "$($indents[3])}" -Path $jsonFile
         Add-Content -Value "$($indents[2])}," -Path $jsonFile
         Write-LogInfo "Added availabilitySet $availabilitySetName.."
+    }
+    #endregion
+
+    #region network security groups
+    if ($AddNetworkSecurityGroup) {
+        Add-Content -Value "$($indents[2]){" -Path $jsonFile
+        Add-Content -Value "$($indents[3])^apiVersion^: ^$apiVersion^," -Path $jsonFile
+        Add-Content -Value "$($indents[3])^type^: ^Microsoft.Network/networkSecurityGroups^," -Path $jsonFile
+        Add-Content -Value "$($indents[3])^name^: ^[variables('networkSecurityGroupName')]^," -Path $jsonFile
+        Add-Content -Value "$($indents[3])^location^: ^[variables('location')]^," -Path $jsonFile
+        Add-Content -Value "$($indents[3])^properties^:" -Path $jsonFile
+        Add-Content -Value "$($indents[3]){" -Path $jsonFile
+        Add-Content -Value "$($indents[4])^securityRules^:" -Path $jsonFile
+        Add-Content -Value "$($indents[4])[" -Path $jsonFile
+        $securityRules | ForEach-Object {
+            Add-Content -Value "$($indents[5]){" -Path $jsonFile
+            Add-Content -Value "$($indents[6])^name^: ^$($_.name)^," -Path $jsonFile
+            Add-Content -Value "$($indents[6])^properties^:" -Path $jsonFile
+            Add-Content -Value "$($indents[6]){" -Path $jsonFile
+            Add-Content -Value "$($indents[7])^description^: ^$($_.properties.description)^," -Path $jsonFile
+            Add-Content -Value "$($indents[7])^protocol^: ^$($_.properties.protocol)^," -Path $jsonFile
+            Add-Content -Value "$($indents[7])^sourcePortRange^: ^$($_.properties.sourcePortRange)^," -Path $jsonFile
+            Add-Content -Value "$($indents[7])^destinationPortRange^: $($_.properties.destinationPortRange)," -Path $jsonFile
+            Add-Content -Value "$($indents[7])^sourceAddressPrefix^: ^$($_.properties.sourceAddressPrefix)^," -Path $jsonFile
+            Add-Content -Value "$($indents[7])^destinationAddressPrefix^: ^$($_.properties.destinationAddressPrefix)^," -Path $jsonFile
+            Add-Content -Value "$($indents[7])^access^: ^$($_.properties.access)^," -Path $jsonFile
+            Add-Content -Value "$($indents[7])^priority^: ^$($_.properties.priority)^," -Path $jsonFile
+            Add-Content -Value "$($indents[7])^direction^: ^$($_.properties.direction)^" -Path $jsonFile
+            Add-Content -Value "$($indents[6])}" -Path $jsonFile
+            if ($_ -eq $securityRules[-1]) {
+                Add-Content -Value "$($indents[5])}" -Path $jsonFile
+            } else {
+                Add-Content -Value "$($indents[5])}," -Path $jsonFile
+            }
+        }
+        Add-Content -Value "$($indents[4])]" -Path $jsonFile
+        Add-Content -Value "$($indents[3])}" -Path $jsonFile
+        Add-Content -Value "$($indents[2])}," -Path $jsonFile
+        Write-LogInfo "Added Network Security Group..."
     }
     #endregion
 
@@ -1595,6 +1647,9 @@ Function Generate-AzureDeployJSONFile ($RGName, $ImageName, $osVHD, $RGXMLData, 
         Add-Content -Value "$($indents[3])^location^: ^[variables('location')]^," -Path $jsonFile
         Add-Content -Value "$($indents[3])^dependsOn^: " -Path $jsonFile
         Add-Content -Value "$($indents[3])[" -Path $jsonFile
+        if ( $AddNetworkSecurityGroup ) {
+            Add-Content -Value "$($indents[4])^[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]^," -Path $jsonFile
+        }
         if ( $EnableIPv6 ) {
             Add-Content -Value "$($indents[4])^[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPv6AddressName'))]^," -Path $jsonFile
         }
@@ -1677,6 +1732,13 @@ Function Generate-AzureDeployJSONFile ($RGName, $ImageName, $osVHD, $RGXMLData, 
         }
         #endregion
         Add-Content -Value "$($indents[4])]" -Path $jsonFile
+        if ( $AddNetworkSecurityGroup ) {
+            Add-Content -Value "$($indents[4])," -Path $jsonFile
+            Add-Content -Value "$($indents[4])^networkSecurityGroup^:" -Path $jsonFile
+            Add-Content -Value "$($indents[4]){" -Path $jsonFile
+            Add-Content -Value "$($indents[5])^id^: ^[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]^" -Path $jsonFile
+            Add-Content -Value "$($indents[4])}" -Path $jsonFile
+        }
         if ($CurrentTestData.AdditionalHWConfig.Networking -imatch "SRIOV") {
             Add-Content -Value "$($indents[4])," -Path $jsonFile
             Add-Content -Value "$($indents[4])^enableAcceleratedNetworking^: true" -Path $jsonFile
