@@ -70,7 +70,7 @@ function Start-LISAv2 {
 
 		[switch] $ExitWithZero,
 
-		# [Optional] Add network security group to VM. XML/Other/network_security_rules.xml need to be prepared. 
+		# [Optional] Add network security group to VM. XML/Other/network_security_rules.xml need to be prepared.
 		[switch] $AddNetworkSecurityGroup
 	)
 
